@@ -15,13 +15,13 @@ def salvar_usuario(dados):
 
     cpf = dados.get("cpf")
 
-    # 🚫 EVITA CPF DUPLICADO
+    
     cursor.execute("SELECT id FROM usuarios WHERE cpf = %s", (cpf,))
     if cursor.fetchone():
         conn.close()
         return False
 
-    # 📸 SALVAR FOTO
+    
     imagem = dados.get("imagem")
     caminho_foto = None
 
@@ -34,7 +34,7 @@ def salvar_usuario(dados):
         with open(caminho_foto, "wb") as f:
             f.write(imagem_bytes)
 
-    # 💾 INSERIR NO BANCO
+    
     query = """
     INSERT INTO usuarios 
     (nome, cpf, cep, rua, numero, bairro, cidade, estado, ano_nascimento, foto)

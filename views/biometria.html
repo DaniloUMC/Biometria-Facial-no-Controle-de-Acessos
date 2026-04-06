@@ -7,8 +7,7 @@
     <h3 class="text-center mb-2">Captura Facial</h3>
     <p class="text-center text-muted">Etapa 2 de 2 - Biometria</p>
 
-    <!-- CÂMERA -->
-    <div id="cameraArea" class="camera-container">
+    <!-- CÂMERA --><div id="cameraArea" class="camera-container">
 
         <video id="video" autoplay playsinline></video>
 
@@ -20,10 +19,10 @@
 
     </div>
 
-    <!-- FORM -->
+    
     <form method="POST" action="/salvar">
 
-        <!-- 🔥 ESSENCIAL -->
+      
         <input type="hidden" name="imagem" id="imagem">
 
         <div class="d-grid mt-4">
@@ -36,10 +35,10 @@
 
 </div>
 
-<!-- 🔥 ESSENCIAL -->
+
 <canvas id="canvas" width="300" height="200" style="display:none;"></canvas>
 
-<!-- 🔥 ESSENCIAL -->
+
 <script src="{{ url_for('static', filename='js/camera.js') }}"></script>
 
 {% endblock %}

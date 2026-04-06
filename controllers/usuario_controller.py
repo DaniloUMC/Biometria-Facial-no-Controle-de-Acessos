@@ -6,13 +6,13 @@ import cv2
 
 usuario_bp = Blueprint('usuario', __name__)
 
-# 🧾 ETAPA 1 - CADASTRO
+
 @usuario_bp.route("/")
 def cadastro():
     return render_template("cadastro.html")
 
 
-# 📸 ETAPA 2 - BIOMETRIA
+
 @usuario_bp.route("/biometria", methods=["POST"])
 def biometria():
 
@@ -24,7 +24,7 @@ def biometria():
     return render_template("biometria.html")
 
 
-# 💾 SALVAR USUÁRIO FINAL
+
 @usuario_bp.route("/salvar", methods=["POST"])
 def salvar():
 
@@ -38,7 +38,7 @@ def salvar():
 
     sucesso = salvar_usuario(dados)
 
-    # limpa sessão
+
     session.pop("dados_usuario", None)
 
     if not sucesso:
@@ -47,7 +47,7 @@ def salvar():
     return "Usuário cadastrado com sucesso!"
 
 
-# 🧠 VALIDAÇÃO DE ROSTO
+
 @usuario_bp.route("/validar_rosto", methods=["POST"])
 def validar_rosto():
     try:
@@ -57,7 +57,7 @@ def validar_rosto():
         if not imagem:
             return jsonify({"erro": "Imagem não enviada"})
 
-        # converter base64
+        
         imagem = imagem.split(",")[1]
         imagem_bytes = base64.b64decode(imagem)
 
@@ -69,7 +69,7 @@ def validar_rosto():
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        # detectores
+        
         face_cascade = cv2.CascadeClassifier(
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
         )
