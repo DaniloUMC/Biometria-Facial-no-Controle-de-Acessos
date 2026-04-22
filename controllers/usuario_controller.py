@@ -1,24 +1,90 @@
-from flask import Blueprint, render_template, request, jsonify, session
-from models.usuario_model import salvar_usuario
+from flask import Blueprint, render_template, request, redirect, jsonify, session
+from models.usuario_model import salvar_usuario, buscar_usuario, excluir_usuario
 import base64
 import numpy as np
 import cv2
+import bcrypt
 
 usuario_bp = Blueprint('usuario', __name__)
 
+
+    
+@usuario_bp.route("/evento")
+def evento():
+    return render_template("evento.html")
 
 @usuario_bp.route("/")
 def cadastro():
     return render_template("cadastro.html")
 
 
+@usuario_bp.route("/login", methods=["GET", "POST"])
+def login():
+
+    # 🔹 ABRIR TELA
+    if request.method == "GET":
+        return render_template("login.html")
+
+    # 🔹 PROCESSAR LOGIN (POST)
+    login = request.form.get("login")
+    senha = request.form.get("senha")
+
+    # validação básica
+    if not login or not senha:
+        return "Preencha todos os campos"
+
+    usuario = buscar_usuario(login)
+
+    if not usuario:
+        return "Usuário não encontrado"
+
+    # 🔐 verificar senha
+    senha_hash = usuario["senha"].encode('utf-8')
+
+    if not bcrypt.checkpw(senha.encode('utf-8'), senha_hash):
+        return "Senha incorreta"
+
+    # ✅ LOGIN OK → salvar sessão
+    session["usuario_id"] = usuario["id"]
+    session["usuario_nome"] = usuario["nome"]
+
+    # 🔁 REDIRECIONAR
+    return redirect("/confirmacao")
+
+
+        
+@usuario_bp.route("/excluir", methods=["POST"])
+def excluir():
+
+    from flask import session, redirect
+
+    usuario_id = session.get("usuario_id")
+
+    if not usuario_id:
+        return redirect("/login")
+
+    excluir_usuario(usuario_id)
+
+    session.clear()
+
+    return "Seus dados foram excluídos com sucesso!"
+
+
+@usuario_bp.route("/confirmacao")
+def confirmacao():
+
+    from flask import session, redirect
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    return render_template("confirmacao.html")
 
 @usuario_bp.route("/biometria", methods=["POST"])
 def biometria():
 
     dados = request.form
 
-    # salva dados na sessão
     session["dados_usuario"] = dict(dados)
 
     return render_template("biometria.html")
@@ -28,24 +94,46 @@ def biometria():
 @usuario_bp.route("/salvar", methods=["POST"])
 def salvar():
 
+    import bcrypt
+    from flask import session
+
+    
     dados = session.get("dados_usuario", {})
 
     if not dados:
         return "Sessão expirada"
 
+   
     imagem = request.form.get("imagem")
+    if not imagem:
+        return "Capture a imagem antes de finalizar!"
+
     dados["imagem"] = imagem
 
+
+    email = dados.get("email")
+    if not email:
+        return "Email obrigatório"
+
+    
+    senha = dados.get("senha")
+    if not senha:
+        return "Senha obrigatória"
+
+    
+    hash_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
+    dados["senha"] = hash_senha.decode('utf-8')
+
+    
     sucesso = salvar_usuario(dados)
 
 
     session.pop("dados_usuario", None)
 
     if not sucesso:
-        return "CPF já cadastrado!"
+        return "CPF ou Email já cadastrado!"
 
     return "Usuário cadastrado com sucesso!"
-
 
 
 @usuario_bp.route("/validar_rosto", methods=["POST"])
@@ -89,15 +177,15 @@ def validar_rosto():
         for (x, y, fw, fh) in faces:
             rosto_detectado = True
 
-            # 🎯 centro do rosto
+            
             centro_x = x + fw // 2
             centro_y = y + fh // 2
 
-            # 🎯 centro da tela
+            
             tela_x = w // 2
             tela_y = h // 2
 
-            # tolerância
+           
             margem_x = w * 0.15
             margem_y = h * 0.20
 
@@ -105,7 +193,7 @@ def validar_rosto():
                 abs(centro_y - tela_y) < margem_y):
                 rosto_centralizado = True
 
-            # 👀 olhos
+            # reconhecer olhos
             roi_gray = gray[y:y+fh, x:x+fw]
             olhos = eye_cascade.detectMultiScale(roi_gray)
 

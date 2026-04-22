@@ -3,15 +3,15 @@ const video = document.getElementById('video');
 let contadorAtivo = false;
 let tempo = 3;
 
-// INICIAR CÂMERA
+
 navigator.mediaDevices.getUserMedia({ video: true })
     .then(stream => {
         video.srcObject = stream;
     });
 
-//////////////////////////////////////////////////////
-// 🔎 DETECÇÃO CONTÍNUA DE ROSTO
-//////////////////////////////////////////////////////
+
+    
+
 
 setInterval(async () => {
 
@@ -33,36 +33,35 @@ setInterval(async () => {
 
     const status = document.getElementById("statusFace");
 
-    // 🚫 SEM ROSTO
+
     if (!result.rosto_detectado) {
         status.innerText = "🔴 Nenhum rosto detectado";
         resetarContagem();
         return;
     }
 
-    // ⚠️ FORA DO CENTRO
+    
     if (!result.rosto_centralizado) {
         status.innerText = "⚠️ Centralize o rosto na moldura";
         resetarContagem();
         return;
     }
 
-    // 🚫 OLHOS NÃO DETECTADOS
     if (!result.olhos_detectados) {
-        status.innerText = "👀 Abra os olhos";
+        status.innerText = "👀 Abria os olhos";
         resetarContagem();
         return;
     }
 
-    // ✅ TUDO OK
+    
     status.innerText = "🟢 Rosto válido";
 
     if (!contadorAtivo) iniciarContagem();
 
 }, 1000);
-//////////////////////////////////////////////////////
-// ⏳ CONTAGEM AUTOMÁTICA
-//////////////////////////////////////////////////////
+
+
+
 
 function iniciarContagem() {
 
@@ -82,7 +81,7 @@ function iniciarContagem() {
             capturarFinal();
         }
 
-        // Se perdeu o rosto no meio, cancela
+    
         if (!contadorAtivo) {
             clearInterval(interval);
         }
@@ -95,9 +94,6 @@ function resetarContagem() {
     document.getElementById("contador").innerText = "";
 }
 
-//////////////////////////////////////////////////////
-// 📸 CAPTURA FINAL + FECHAR CAMERA
-//////////////////////////////////////////////////////
 
 function capturarFinal() {
 
@@ -121,9 +117,7 @@ function capturarFinal() {
     document.getElementById("cameraArea").style.display = "none";
 }
 
-//////////////////////////////////////////////////////
-// 📍 CEP AUTOMÁTICO
-//////////////////////////////////////////////////////
+
 
 document.getElementById("cep").addEventListener("blur", function () {
 
@@ -152,14 +146,15 @@ document.getElementById("cep").addEventListener("blur", function () {
 
 });
 
-//////////////////////////////////////////////////////
-// ✅ VALIDAÇÕES
-//////////////////////////////////////////////////////
+
 
 function validarFormulario() {
 
     const cpf = document.getElementById("cpf").value;
     const ano = document.getElementById("ano").value;
+    const email = document.getElementById("email").value;
+    const senha = document.getElementById("senha").value;
+    const confirmar = document.getElementById("confirmarSenha").value;
 
     if (!validarCPF(cpf)) {
         alert("CPF inválido!");
@@ -168,6 +163,22 @@ function validarFormulario() {
 
     if (!validarAno(ano)) {
         alert("Ano inválido! (1920 até atual)");
+        return false;
+    }
+
+      
+    if (!email.includes("@") || !email.includes(".")) {
+        alert("Email inválido!");
+        return false;
+    }
+
+    if (senha.length < 6) {
+        alert("A sennha deve ter no mínimo 6 caracteres");
+        return false;
+    }
+
+    if (senha !== confirmar) {
+        alert("As senhas não coincideem");
         return false;
     }
 
