@@ -133,7 +133,7 @@ def salvar():
     if not sucesso:
         return "CPF ou Email já cadastrado!"
 
-    return "Usuário cadastrado com sucesso!"
+    return redirect("/confirmacao")
 
 
 @usuario_bp.route("/validar_rosto", methods=["POST"])
