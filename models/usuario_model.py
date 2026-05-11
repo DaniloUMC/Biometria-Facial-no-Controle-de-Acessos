@@ -4,14 +4,14 @@ import mysql.connector
 from database.db import conectar
 
 
-# 📁 pasta onde salva as fotos
+
 PASTA_FOTOS = "static/fotos"
 
 if not os.path.exists(PASTA_FOTOS):
     os.makedirs(PASTA_FOTOS)
 
 
-# 🔹 SALVAR USUÁRIO
+
 def salvar_usuario(dados):
 
     try:
@@ -108,13 +108,18 @@ def buscar_usuario(login):
 
 
 
-def excluir_usuario(id):
+def excluir_usuario(usuario_id):
 
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM usuarios WHERE id = %s", (id,))
+    query = "DELETE FROM usuarios WHERE id = %s"
+
+    cursor.execute(query, (usuario_id,))
+
     conn.commit()
 
     cursor.close()
     conn.close()
+
+    return True

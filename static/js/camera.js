@@ -48,7 +48,7 @@ setInterval(async () => {
     }
 
     if (!result.olhos_detectados) {
-        status.innerText = "👀 Abria os olhos";
+        status.innerText = " Abraa os olhos";
         resetarContagem();
         return;
     }

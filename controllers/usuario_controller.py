@@ -1,17 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, jsonify, session
-from models.usuario_model import salvar_usuario, buscar_usuario, excluir_usuario
-import base64
-import numpy as np
-import cv2
-import bcrypt
+from services.auth_service import autenticar_usuario
+from services.usuario_service import cadastrar_usuario, remover_usuario
+from services.biometria_service import validar_face
 
 usuario_bp = Blueprint('usuario', __name__)
 
 
-    
 @usuario_bp.route("/evento")
 def evento():
     return render_template("evento.html")
+
 
 @usuario_bp.route("/")
 def cadastro():
@@ -21,64 +19,33 @@ def cadastro():
 @usuario_bp.route("/login", methods=["GET", "POST"])
 def login():
 
-    # 🔹 ABRIR TELA
     if request.method == "GET":
         return render_template("login.html")
 
-    # 🔹 PROCESSAR LOGIN (POST)
     login = request.form.get("login")
     senha = request.form.get("senha")
 
-    # validação básica
-    if not login or not senha:
-        return "Preencha todos os campos"
+    resultado = autenticar_usuario(login, senha)
 
-    usuario = buscar_usuario(login)
+    if not resultado["sucesso"]:
+        return resultado["mensagem"]
 
-    if not usuario:
-        return "Usuário não encontrado"
+    usuario = resultado["usuario"]
 
-    # 🔐 verificar senha
-    senha_hash = usuario["senha"].encode('utf-8')
-
-    if not bcrypt.checkpw(senha.encode('utf-8'), senha_hash):
-        return "Senha incorreta"
-
-    # ✅ LOGIN OK → salvar sessão
     session["usuario_id"] = usuario["id"]
     session["usuario_nome"] = usuario["nome"]
 
-    # 🔁 REDIRECIONAR
     return redirect("/confirmacao")
-
-
-        
-@usuario_bp.route("/excluir", methods=["POST"])
-def excluir():
-
-    from flask import session, redirect
-
-    usuario_id = session.get("usuario_id")
-
-    if not usuario_id:
-        return redirect("/login")
-
-    excluir_usuario(usuario_id)
-
-    session.clear()
-
-    return "Seus dados foram excluídos com sucesso!"
 
 
 @usuario_bp.route("/confirmacao")
 def confirmacao():
 
-    from flask import session, redirect
-
     if "usuario_id" not in session:
         return redirect("/login")
 
     return render_template("confirmacao.html")
+
 
 @usuario_bp.route("/biometria", methods=["POST"])
 def biometria():
@@ -90,129 +57,51 @@ def biometria():
     return render_template("biometria.html")
 
 
-
 @usuario_bp.route("/salvar", methods=["POST"])
 def salvar():
 
-    import bcrypt
-    from flask import session
-
-    
     dados = session.get("dados_usuario", {})
 
     if not dados:
         return "Sessão expirada"
 
-   
     imagem = request.form.get("imagem")
-    if not imagem:
-        return "Capture a imagem antes de finalizar!"
 
-    dados["imagem"] = imagem
-
-
-    email = dados.get("email")
-    if not email:
-        return "Email obrigatório"
-
-    
-    senha = dados.get("senha")
-    if not senha:
-        return "Senha obrigatória"
-
-    
-    hash_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
-    dados["senha"] = hash_senha.decode('utf-8')
-
-    
-    sucesso = salvar_usuario(dados)
-
+    resultado = cadastrar_usuario(dados, imagem)
 
     session.pop("dados_usuario", None)
 
-    if not sucesso:
-        return "CPF ou Email já cadastrado!"
+    if not resultado["sucesso"]:
+        return resultado["mensagem"]
+
+    session["usuario_id"] = resultado["usuario_id"]
+    session["usuario_nome"] = dados.get("nome")
 
     return redirect("/confirmacao")
 
 
+@usuario_bp.route("/excluir", methods=["POST"])
+def excluir():
+
+    usuario_id = session.get("usuario_id")
+
+    if not usuario_id:
+        return redirect("/login")
+
+    remover_usuario(usuario_id)
+
+    session.clear()
+
+    return "Seus dados foram excluídos com sucesso!"
+
+
 @usuario_bp.route("/validar_rosto", methods=["POST"])
 def validar_rosto():
-    try:
-        data = request.get_json()
-        imagem = data.get("imagem")
 
-        if not imagem:
-            return jsonify({"erro": "Imagem não enviada"})
+    data = request.get_json()
 
-        
-        imagem = imagem.split(",")[1]
-        imagem_bytes = base64.b64decode(imagem)
+    imagem = data.get("imagem")
 
-        np_arr = np.frombuffer(imagem_bytes, np.uint8)
-        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    resultado = validar_face(imagem)
 
-        if img is None:
-            return jsonify({"erro": "Imagem inválida"})
-
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-        )
-
-        eye_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_eye.xml'
-        )
-
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-
-        rosto_detectado = False
-        rosto_centralizado = False
-        olhos_detectados = False
-
-        h, w = gray.shape
-
-        for (x, y, fw, fh) in faces:
-            rosto_detectado = True
-
-            
-            centro_x = x + fw // 2
-            centro_y = y + fh // 2
-
-            
-            tela_x = w // 2
-            tela_y = h // 2
-
-           
-            margem_x = w * 0.15
-            margem_y = h * 0.20
-
-            if (abs(centro_x - tela_x) < margem_x and
-                abs(centro_y - tela_y) < margem_y):
-                rosto_centralizado = True
-
-            # reconhecer olhos
-            roi_gray = gray[y:y+fh, x:x+fw]
-            olhos = eye_cascade.detectMultiScale(roi_gray)
-
-            if len(olhos) >= 2:
-                olhos_detectados = True
-
-            break
-
-        return jsonify({
-            "rosto_detectado": rosto_detectado,
-            "rosto_centralizado": rosto_centralizado,
-            "olhos_detectados": olhos_detectados
-        })
-
-    except Exception as e:
-        print("Erro ao processar imagem:", e)
-        return jsonify({
-            "erro": "Erro ao processar imagem",
-            "rosto_detectado": False,
-            "rosto_centralizado": False,
-            "olhos_detectados": False
-        })
+    return jsonify(resultado)
