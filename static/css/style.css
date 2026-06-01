@@ -71,3 +71,80 @@ video {
     margin-top: 10px;
     font-weight: bold;
 }
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #1f2429, #2c3e50);
+}
+
+.admin-sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: #111827;
+    padding: 30px 20px;
+    color: #fff;
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+.admin-logo {
+    text-align: center;
+    margin-bottom: 40px;
+    font-weight: bold;
+}
+
+.admin-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.admin-link {
+    color: #cbd5e1;
+    text-decoration: none;
+    padding: 14px 18px;
+    border-radius: 10px;
+    transition: 0.3s;
+    font-weight: 500;
+}
+
+.admin-link:hover,
+.admin-link.active {
+    background: #2563eb;
+    color: #fff;
+}
+
+.admin-content {
+    margin-left: 240px;
+    padding: 35px;
+    width: calc(100% - 240px);
+    min-height: 100vh;
+}
+
+.admin-title {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 350px;
+}
+
+.card {
+    border-radius: 12px;
+}
+
+.chart-box {
+    position: relative;
+    width: 100%;
+    height: 280px;
+}
+
+.dashboard-card {
+    min-height: 380px;
+}

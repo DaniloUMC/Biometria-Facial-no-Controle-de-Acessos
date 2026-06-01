@@ -1,6 +1,9 @@
 from flask import Flask
 from controllers.usuario_controller import usuario_bp
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__, template_folder="views", static_folder="static")
 

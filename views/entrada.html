@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="card card-custom">
+
+    <h3 class="text-center mb-3">Entrada do Evento</h3>
+
+    <div id="cameraArea" class="camera-container">
+        <video id="video" autoplay playsinline></video>
+
+        <div class="overlay"></div>
+        <div class="oval-frame"></div>
+
+        <p id="statusFace">Posicione seu rosto para reconhecimento</p>
+    </div>
+
+    <canvas id="canvas" width="400" height="400" style="display:none;"></canvas>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/entrada.js') }}"></script>
+
+{% endblock %}

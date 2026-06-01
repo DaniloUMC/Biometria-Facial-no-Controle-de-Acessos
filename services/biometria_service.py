@@ -74,9 +74,8 @@ def validar_face(imagem):
         )
 
         eye_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_eye.xml'
+            cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml'
         )
-
         faces = face_cascade.detectMultiScale(
             gray,
             scaleFactor=1.2,
@@ -137,17 +136,21 @@ def validar_face(imagem):
 
             roi_gray = gray[y:y + fh, x:x + fw]
 
+            altura_rosto = roi_gray.shape[0]
+            regiao_olhos = roi_gray[0:int(altura_rosto * 0.55), :]
+
             olhos = eye_cascade.detectMultiScale(
-                roi_gray,
+                regiao_olhos,
                 scaleFactor=1.1,
-                minNeighbors=8
+                minNeighbors=10,
+                minSize=(25, 25)
             )
 
             if len(olhos) < 2:
                 return {
                     "sucesso": False,
-                    "erro": "Mantenha os olhos visíveis e abertos"
-                }
+                    "erro": "Mantenha os olhos abertos e visíveis"
+            }
 
             return {
                 "sucesso": True,
@@ -157,7 +160,7 @@ def validar_face(imagem):
             }
 
         return {
-            "sucesso": False,
+            
             "erro": "Falha inesperada na validação facial"
         }
 

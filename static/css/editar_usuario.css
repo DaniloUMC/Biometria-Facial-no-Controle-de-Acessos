@@ -1,0 +1,91 @@
+body{
+    margin:0;
+    min-height:100vh;
+    background:linear-gradient(135deg,#1f2429,#2c3e50);
+    overflow-x:hidden;
+}
+
+.container-center{
+    display:block!important;
+    height:auto!important;
+    min-height:100vh!important;
+    padding:0!important;
+    max-width:none!important;
+    width:100%!important;
+}
+
+.container-center > div{
+    width:100%!important;
+    max-width:none!important;
+    flex:none!important;
+}
+
+.admin-wrapper{
+    display:flex;
+    min-height:100vh;
+    width:100%;
+}
+
+.admin-sidebar{
+    width:240px;
+    min-height:100vh;
+    background:#111827;
+    padding:35px 20px;
+    color:#fff;
+    flex-shrink:0;
+}
+
+.admin-logo{
+    text-align:center;
+    margin-bottom:45px;
+    font-weight:bold;
+}
+
+.admin-menu{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.admin-link{
+    color:#e5e7eb;
+    text-decoration:none;
+    padding:14px 18px;
+    border-radius:10px;
+    font-weight:600;
+    transition:.3s;
+}
+
+.admin-link:hover,
+.admin-link.active{
+    background:#2563eb;
+    color:#fff;
+}
+
+.admin-content{
+    flex:1;
+    padding:35px;
+}
+
+.admin-title{
+    color:#fff;
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.camera-container{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    margin:auto;
+}
+
+#video{
+    width:100%;
+    border-radius:12px;
+}
+
+.form-control:disabled{
+    background:#e9ecef;
+    cursor:not-allowed;
+}
