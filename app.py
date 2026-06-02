@@ -9,7 +9,7 @@ app = Flask(__name__, template_folder="views", static_folder="static")
 
 
 app.secret_key = os.urandom(24)
-app.secret_key = "chave_super_secreta"
+app.secret_key = os.getenv("SECRET_KEY")
 app.register_blueprint(usuario_bp)
 
 
