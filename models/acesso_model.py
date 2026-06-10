@@ -1,18 +1,15 @@
 from database.db import conectar
 
 
-def registrar_acesso(usuario_id, usuario_registro, cpf, status, observacao=None, distancia=None):
+def registrar_acesso(usuario_registro, cpf, status, observacao, distancia):
     conn = conectar()
     cursor = conn.cursor()
 
-    query = """
-    INSERT INTO acessos
-    (usuario_id, usuario_registro, cpf, status, observacao, distancia)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """
-
-    cursor.execute(query, (
-        usuario_id,
+    cursor.execute("""
+        INSERT INTO acessos
+        (usuario_registro, cpf, status, observacao, distancia)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (
         usuario_registro,
         cpf,
         status,
@@ -21,7 +18,6 @@ def registrar_acesso(usuario_id, usuario_registro, cpf, status, observacao=None,
     ))
 
     conn.commit()
-
     cursor.close()
     conn.close()
 
@@ -33,7 +29,7 @@ def listar_acessos(termo="", status="", data_inicio="", data_fim="", limite=50, 
     cursor = conn.cursor(dictionary=True)
 
     query = """
-    SELECT id, usuario_id, usuario_registro, cpf, status, observacao, distancia, data_hora
+    SELECT id, usuario_registro, cpf, status, observacao, distancia, data_hora
     FROM acessos
     WHERE 1=1
     """

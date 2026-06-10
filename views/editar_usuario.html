@@ -133,6 +133,47 @@
                                value="{{ usuario.estado }}"
                                required>
                     </div>
+          
+
+                    <div class="form-check mt-3">
+                        <input 
+                            disabled
+                            type="checkbox" 
+                            name="consentimento_lgpd" 
+                            value="1"
+                            {% if usuario.consentimento_lgpd %}checked{% endif %}
+                        >
+
+                        <label>
+                            Consentimento LGPD aceito
+                        </label>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            Intenção de Participação
+                        </label>
+
+                        <select
+                            class="form-control"
+                            name="intencao_evento"
+                        >
+                            <option value="1"
+                                {% if usuario.intencao_evento == 1 %}
+                                    selected
+                                {% endif %}
+                            >
+                                Confirmado
+                            </option>
+
+                            <option value="0"
+                                {% if usuario.intencao_evento == 0 %}
+                                    selected
+                                {% endif %}
+                            >
+                                Cancelado
+                            </option>
+                        </select>
+                    </div>
 
                 </div>
 

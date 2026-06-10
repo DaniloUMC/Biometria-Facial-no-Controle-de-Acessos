@@ -13,7 +13,15 @@ from openpyxl import Workbook
 import tempfile
 from functools import wraps
 from services.admin_service import autenticar_admin
+from services.usuario_service import obter_usuario, atualizar_dados_do_usuario_logado
+from flask import request, render_template, redirect
+from services.usuario_service import remover_usuario
+from services.usuario_service import excluir_usuario
 
+from services.usuario_service import (
+    obter_usuario,
+    atualizar_dados_do_usuario_logado
+)
 
 usuario_bp = Blueprint('usuario', __name__)
 
@@ -59,12 +67,22 @@ def admin_logout():
 
 @usuario_bp.route("/evento")
 def evento():
-    return render_template("evento.html")
+    evento_id = request.args.get("evento_id", 1)
+
+    return render_template(
+        "evento.html",
+        evento_id=evento_id
+    )
 
 
 @usuario_bp.route("/")
 def cadastro():
-    return render_template("cadastro.html")
+    evento_id = request.args.get("evento_id", 1)
+
+    return render_template(
+        "cadastro.html",
+        evento_id=evento_id
+    )
 
 
 @usuario_bp.route("/login", methods=["GET", "POST"])
@@ -101,7 +119,10 @@ def confirmacao():
 @usuario_bp.route("/biometria", methods=["POST"])
 def biometria():
 
-    dados = request.form
+    dados = request.form.to_dict()
+
+    dados["evento_id"] = request.form.get("evento_id", 1)
+    dados["consentimento_lgpd"] = request.form.get("consentimento_lgpd", 0)
 
     session["dados_usuario"] = dict(dados)
 
@@ -136,14 +157,12 @@ def excluir():
 
     usuario_id = session.get("usuario_id")
 
-    if not usuario_id:
-        return redirect("/login")
-
-    remover_usuario(usuario_id)
+    if usuario_id:
+        excluir_usuario(usuario_id)
 
     session.clear()
 
-    return "Seus dados foram excluídos com sucesso!"
+    return redirect("/")
 
 
 @usuario_bp.route("/validar_rosto", methods=["POST"])
@@ -293,3 +312,56 @@ def registros_exportar():
         as_attachment=True,
         download_name="registros_acessos.xlsx"
     )
+
+
+@usuario_bp.route("/meus-dados", methods=["GET"])
+def editar_meus_dados():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    usuario = obter_usuario(session["usuario_id"])
+
+    if not usuario:
+        return redirect("/login")
+
+    return render_template(
+        "editar_meus_dados.html",
+        usuario=usuario
+    )
+
+
+@usuario_bp.route("/meus-dados/salvar", methods=["POST"])
+def salvar_meus_dados():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    resultado = atualizar_dados_do_usuario_logado(
+        session["usuario_id"],
+        request.form
+    )
+
+    if not resultado["sucesso"]:
+        usuario = obter_usuario(session["usuario_id"])
+
+        return render_template(
+            "editar_meus_dados.html",
+            usuario=usuario,
+            erro=resultado["mensagem"]
+        )
+
+    return redirect("/confirmacao")
+
+@usuario_bp.route(
+    "/usuario/excluir/<int:usuario_id>",
+    methods=["POST"]
+)
+def excluir_usuario_admin(usuario_id):
+
+    if "admin_id" not in session:
+        return redirect("/admin/login")
+
+    remover_usuario(usuario_id)
+
+    return redirect("/gerenciar")

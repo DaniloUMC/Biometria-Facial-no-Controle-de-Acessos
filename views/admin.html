@@ -85,10 +85,38 @@
         min-height: 130px;
     }
 
+    .dashboard-card h6 {
+        color: #6b7280;
+        font-weight: 700;
+    }
+
+    .dashboard-card h2 {
+        font-size: 36px;
+        font-weight: 800;
+        margin-top: 10px;
+    }
+
     .chart-container {
         position: relative;
         width: 100%;
         height: 330px;
+    }
+
+    .badge-status {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .badge-permitido {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge-negado {
+        background: #fee2e2;
+        color: #991b1b;
     }
 </style>
 
@@ -103,7 +131,6 @@
             <a href="/gerenciar" class="admin-link">Gerenciar</a>
             <a href="/registros" class="admin-link">Registros</a>
             <a href="/admin/logout" class="admin-link">Sair</a>
-
         </nav>
     </aside>
 
@@ -112,13 +139,6 @@
         <h2 class="admin-title">Dashboard Administrativo</h2>
 
         <div class="row g-3 mb-4">
-
-            <div class="col-xl-3 col-md-6">
-                <div class="card dashboard-card shadow text-center p-4">
-                    <h6>Total de Usuários</h6>
-                    <h2>{{ dados.total_usuarios }}</h2>
-                </div>
-            </div>
 
             <div class="col-xl-3 col-md-6">
                 <div class="card dashboard-card shadow text-center p-4">
@@ -131,6 +151,13 @@
                 <div class="card dashboard-card shadow text-center p-4">
                     <h6>Acessos Permitidos</h6>
                     <h2>{{ dados.acessos_permitidos }}</h2>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card dashboard-card shadow text-center p-4">
+                    <h6>Acessos Negados</h6>
+                    <h2>{{ dados.acessos_negados }}</h2>
                 </div>
             </div>
 
@@ -175,7 +202,7 @@
                     <h4 class="mb-4">Usuários com Mais Acessos</h4>
 
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover align-middle">
                             <thead>
                                 <tr>
                                     <th>Usuário</th>
@@ -188,6 +215,75 @@
                                 <tr>
                                     <td>{{ usuario.nome }}</td>
                                     <td>{{ usuario.total }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">
+                                        Nenhum acesso registrado.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row g-4 mt-1">
+
+            <div class="col-12">
+                <div class="card shadow p-4">
+                    <h4 class="mb-4">Últimos Acessos</h4>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuário</th>
+                                    <th>CPF</th>
+                                    <th>Status</th>
+                                    <th>Observação</th>
+                                    <th>Distância</th>
+                                    <th>Data/Hora</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for acesso in dados.ultimos_acessos %}
+                                <tr>
+                                    <td>{{ acesso.id }}</td>
+                                    <td>{{ acesso.usuario_registro }}</td>
+                                    <td>{{ acesso.cpf }}</td>
+                                    <td>
+                                        {% if acesso.status == "PERMITIDO" %}
+                                            <span class="badge-status badge-permitido">
+                                                PERMITIDO
+                                            </span>
+                                        {% else %}
+                                            <span class="badge-status badge-negado">
+                                                {{ acesso.status }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ acesso.observacao }}</td>
+                                    <td>
+                                        {% if acesso.distancia %}
+                                            {{ "%.4f"|format(acesso.distancia) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ acesso.data_hora }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        Nenhum acesso registrado.
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

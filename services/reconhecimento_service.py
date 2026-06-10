@@ -62,8 +62,7 @@ def salvar_captura_temporaria(imagem_base64):
 
     return temp.name
 
-
-def reconhecer_usuario(imagem_base64):
+def reconhecer_usuario(imagem_base64, evento_id_atual=1):
     caminho_captura = None
     caminho_foto_temp = None
 
@@ -71,17 +70,18 @@ def reconhecer_usuario(imagem_base64):
         if not imagem_base64:
             return {
                 "sucesso": False,
-                "mensagem": "Imagem não enviada"
+                "tipo": "IMAGEM_NAO_ENVIADA",
+                "mensagem": "Imagem não enviada. Procure a administração."
             }
 
         if "," not in imagem_base64:
             return {
                 "sucesso": False,
-                "mensagem": "Formato de imagem inválido"
+                "tipo": "FORMATO_INVALIDO",
+                "mensagem": "Formato de imagem inválido. Procure a administração."
             }
 
         caminho_captura = salvar_captura_temporaria(imagem_base64)
-
         usuarios = listar_usuarios_com_foto()
 
         if not usuarios:
@@ -89,18 +89,47 @@ def reconhecer_usuario(imagem_base64):
 
             return {
                 "sucesso": False,
-                "mensagem": "Nenhum usuário com foto cadastrada"
+                "tipo": "SEM_CADASTROS",
+                "mensagem": "Nenhum cadastro biométrico localizado. Procure a administração."
             }
 
+        houve_usuario_evento = False
+        houve_usuario_lgpd = False
+        houve_usuario_cancelado = False
+        houve_foto_valida = False
+        houve_erro_biometria = False
+
         for usuario in usuarios:
+            try:
+                usuario_evento_id = int(usuario.get("evento_id", 1))
+            except Exception:
+                usuario_evento_id = 1
+
+            if usuario_evento_id != int(evento_id_atual):
+                continue
+
+            houve_usuario_evento = True
+
+            if int(usuario.get("consentimento_lgpd", 0)) != 1:
+                continue
+
+            houve_usuario_lgpd = True
+
+            if int(usuario.get("intencao_evento", 1)) != 1:
+                houve_usuario_cancelado = True
+                continue
+
             caminho_foto = usuario.get("foto")
 
             if not caminho_foto or not os.path.exists(caminho_foto):
                 continue
 
+            houve_foto_valida = True
+
             try:
                 caminho_foto_temp = descriptografar_foto_para_temp(caminho_foto)
             except Exception:
+                houve_erro_biometria = True
                 remover_arquivo(caminho_foto_temp)
                 caminho_foto_temp = None
                 continue
@@ -114,6 +143,7 @@ def reconhecer_usuario(imagem_base64):
                     enforce_detection=False
                 )
             except Exception:
+                houve_erro_biometria = True
                 remover_arquivo(caminho_foto_temp)
                 caminho_foto_temp = None
                 continue
@@ -127,7 +157,6 @@ def reconhecer_usuario(imagem_base64):
                 cpf_mascarado = mascarar_cpf_registro(usuario.get("cpf"))
 
                 registrar_acesso(
-                    usuario["id"],
                     usuario_registro,
                     cpf_mascarado,
                     "PERMITIDO",
@@ -139,18 +168,56 @@ def reconhecer_usuario(imagem_base64):
 
                 return {
                     "sucesso": True,
+                    "tipo": "ACESSO_PERMITIDO",
                     "usuario_id": usuario["id"],
                     "nome": usuario["nome"],
                     "usuario_registro": usuario_registro,
+                    "cpf": cpf_mascarado,
                     "mensagem": "Acesso permitido",
                     "distancia": distancia
                 }
 
         remover_arquivo(caminho_captura)
 
+        if not houve_usuario_evento:
+            return {
+                "sucesso": False,
+                "tipo": "EVENTO_NAO_AUTORIZADO",
+                "mensagem": "Participante não autorizado para este evento. Procure a administração."
+            }
+
+        if not houve_usuario_lgpd:
+            return {
+                "sucesso": False,
+                "tipo": "LGPD_PENDENTE",
+                "mensagem": "Consentimento LGPD pendente. Procure a administração."
+            }
+
+        if houve_usuario_cancelado:
+            return {
+                "sucesso": False,
+                "tipo": "EVENTO_CANCELADO",
+                "mensagem": "Participação no evento cancelada. Procure a administração."
+            }
+
+        if not houve_foto_valida:
+            return {
+                "sucesso": False,
+                "tipo": "SEM_FOTO_BIOMETRICA",
+                "mensagem": "Biometria não encontrada. Procure a administração."
+            }
+
+        if houve_erro_biometria:
+            return {
+                "sucesso": False,
+                "tipo": "ERRO_BIOMETRIA",
+                "mensagem": "Erro na biometria cadastrada. Procure a administração."
+            }
+
         return {
             "sucesso": False,
-            "mensagem": "Usuário não reconhecido"
+            "tipo": "NAO_RECONHECIDO",
+            "mensagem": "Não foi possível validar sua identidade automaticamente. Procure a administração do evento."
         }
 
     except Exception as e:
@@ -159,10 +226,7 @@ def reconhecer_usuario(imagem_base64):
 
         return {
             "sucesso": False,
-            "mensagem": "Erro no reconhecimento facial",
+            "tipo": "ERRO_RECONHECIMENTO",
+            "mensagem": "Erro na validação biométrica. Procure a administração.",
             "erro": str(e)
         }
-    
-
-
-

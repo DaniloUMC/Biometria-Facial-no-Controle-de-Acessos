@@ -135,7 +135,11 @@
                             <th>Cidade</th>
                             <th>Estado</th>
                             <th>Cadastro</th>
+                            <th>LGPD</th>
+                            <th>Evento</th>
+                            <th>Intenção</th>
                             <th>Ações</th>
+                         
                         </tr>
                     </thead>
 
@@ -148,6 +152,22 @@
                                 <td>{{ usuario.cidade }}</td>
                                 <td>{{ usuario.estado }}</td>
                                 <td>{{ usuario.data_cadastro }}</td>
+                                <td>
+                                    {% if usuario.consentimento_lgpd %}
+                                        Aceito
+                                    {% else %}
+                                        Pendente
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ usuario.evento_id }}</td>
+                                <td>
+                                    {% if usuario.intencao_evento == 1 %}
+                                        Confirmado
+                                    {% else %}
+                                        Cancelado
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <a href="/usuario/editar/{{ usuario.id }}" class="btn btn-sm btn-warning">
                                         Editar

@@ -3,6 +3,16 @@ from models.usuario_model import salvar_usuario, excluir_usuario
 from models.usuario_model import listar_usuarios_paginado
 from models.usuario_model import buscar_usuario_por_id, atualizar_usuario, atualizar_foto_usuario
 from services.mascara_service import mascarar_lista_usuarios, mascarar_usuario
+from models.usuario_model import excluir_usuario as excluir_usuario_model
+from models.usuario_model import (
+    salvar_usuario,
+    excluir_usuario,
+    listar_usuarios_paginado,
+    buscar_usuario_por_id,
+    atualizar_usuario,
+    atualizar_foto_usuario,
+    atualizar_meus_dados
+)
 
 def cadastrar_usuario(dados, imagem):
     if not imagem:
@@ -57,6 +67,9 @@ def listar_usuarios(termo="", limite=25, offset=0):
     usuarios = listar_usuarios_paginado(termo, limite, offset)
     return mascarar_lista_usuarios(usuarios)
 
+def excluir_usuario(usuario_id):
+    return excluir_usuario_model(usuario_id)
+
 
 def obter_usuario(usuario_id):
     usuario = buscar_usuario_por_id(usuario_id)
@@ -80,3 +93,42 @@ def editar_usuario(usuario_id, dados):
 
 def editar_foto_usuario(usuario_id, imagem):
     return atualizar_foto_usuario(usuario_id, imagem)
+
+def atualizar_dados_do_usuario_logado(usuario_id, dados):
+
+    campos_obrigatorios = [
+        "nome",
+        "email",
+        "cep",
+        "rua",
+        "numero",
+        "bairro",
+        "cidade",
+        "estado"
+    ]
+
+    for campo in campos_obrigatorios:
+        if not dados.get(campo):
+            return {
+                "sucesso": False,
+                "mensagem": f"O campo {campo} é obrigatório."
+            }
+
+    if "cpf" in dados:
+        return {
+            "sucesso": False,
+            "mensagem": "O CPF não pode ser alterado."
+        }
+
+    dados_tratados = dict(dados)
+
+    dados_tratados["intencao_evento"] = (
+        1 if dados.get("intencao_evento") == "1" else 0
+    )
+
+    atualizar_meus_dados(usuario_id, dados_tratados)
+
+    return {
+        "sucesso": True,
+        "mensagem": "Dados atualizados com sucesso."
+    }

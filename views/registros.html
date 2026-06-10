@@ -66,6 +66,7 @@
                             <th>Observação</th>
                             <th>Distância</th>
                             <th>Data/Hora</th>
+                          
                         </tr>
                     </thead>
 
@@ -79,6 +80,7 @@
                             <td>{{ acesso.observacao }}</td>
                             <td>{{ "%.4f"|format(acesso.distancia or 0) }}</td>
                             <td>{{ acesso.data_hora }}</td>
+                   
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -37,6 +37,12 @@ def salvar_usuario(dados):
 
         cpf = dados.get("cpf")
         email = dados.get("email")
+        if dados["consentimento_lgpd"] != "1":
+            return render_template(
+                "cadastro.html",
+                erro="É necessário aceitar o termo de consentimento LGPD para continuar.",
+                evento_id=dados["evento_id"]
+        )
 
         cursor.execute(
             "SELECT id FROM usuarios WHERE cpf = %s OR email = %s",
@@ -57,8 +63,8 @@ def salvar_usuario(dados):
 
         query = """
         INSERT INTO usuarios 
-        (nome, cpf, cep, rua, numero, bairro, cidade, estado, ano_nascimento, foto, senha, email)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (nome, cpf, cep, rua, numero, bairro, cidade, estado, ano_nascimento, foto, senha, email, consentimento_lgpd, data_consentimento, evento_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)
         """
 
         valores = (
@@ -74,6 +80,8 @@ def salvar_usuario(dados):
             caminho_foto,
             dados.get("senha"),
             email,
+            dados.get("consentimento_lgpd", 0),
+            dados.get("evento_id", 1)
         )
 
         cursor.execute(query, valores)
@@ -119,15 +127,35 @@ def buscar_usuario(login):
 
 def excluir_usuario(usuario_id):
     conn = conectar()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
-    query = "DELETE FROM usuarios WHERE id = %s"
+    cursor.execute("""
+        SELECT foto
+        FROM usuarios
+        WHERE id = %s
+    """, (usuario_id,))
 
-    cursor.execute(query, (usuario_id,))
+    usuario = cursor.fetchone()
+
+    if not usuario:
+        cursor.close()
+        conn.close()
+        return False
+
+    caminho_foto = usuario.get("foto")
+
+    cursor.execute("""
+        DELETE FROM usuarios
+        WHERE id = %s
+    """, (usuario_id,))
+
     conn.commit()
 
     cursor.close()
     conn.close()
+
+    if caminho_foto and os.path.exists(caminho_foto):
+        os.remove(caminho_foto)
 
     return True
 
@@ -137,8 +165,8 @@ def listar_usuarios_com_foto():
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT id, nome, cpf, foto 
-        FROM usuarios 
+        SELECT id, nome, cpf, foto, evento_id, consentimento_lgpd, intencao_evento
+        FROM usuarios
         WHERE foto IS NOT NULL
     """)
 
@@ -156,7 +184,7 @@ def listar_usuarios_paginado(termo="", limite=25, offset=0):
     termo_busca = f"%{termo}%"
 
     query = """
-    SELECT id, nome, cpf, email, cidade, estado, data_cadastro
+    SELECT id, nome, cpf, email, cidade, estado, data_cadastro, consentimento_lgpd, evento_id, intencao_evento
     FROM usuarios
     WHERE nome LIKE %s OR cpf LIKE %s OR email LIKE %s
     ORDER BY nome ASC
@@ -184,7 +212,7 @@ def buscar_usuario_por_id(usuario_id):
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT id, nome, cpf, email, cep, rua, numero, bairro, cidade, estado, ano_nascimento, foto
+        SELECT id, nome, cpf, email, cep, rua, numero, bairro, cidade, estado, ano_nascimento, foto, consentimento_lgpd, data_consentimento, evento_id, intencao_evento
         FROM usuarios
         WHERE id = %s
     """, (usuario_id,))
@@ -199,7 +227,28 @@ def buscar_usuario_por_id(usuario_id):
 
 def atualizar_usuario(usuario_id, dados):
     conn = conectar()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT consentimento_lgpd
+        FROM usuarios
+        WHERE id = %s
+    """, (usuario_id,))
+
+    usuario_atual = cursor.fetchone()
+
+    if not usuario_atual:
+        cursor.close()
+        conn.close()
+        return False
+
+    if "consentimento_lgpd" in dados:
+        consentimento_lgpd = 1 if str(dados.get("consentimento_lgpd")) == "1" else 0
+    else:
+        consentimento_lgpd = usuario_atual["consentimento_lgpd"]
+
+    intencao_evento = 1 if str(dados.get("intencao_evento", "1")) == "1" else 0
+    evento_id = int(dados.get("evento_id", 1))
 
     query = """
     UPDATE usuarios
@@ -210,7 +259,14 @@ def atualizar_usuario(usuario_id, dados):
         numero = %s,
         bairro = %s,
         cidade = %s,
-        estado = %s
+        estado = %s,
+        consentimento_lgpd = %s,
+        data_consentimento = CASE
+            WHEN %s = 1 AND data_consentimento IS NULL THEN NOW()
+            ELSE data_consentimento
+        END,
+        evento_id = %s,
+        intencao_evento = %s
     WHERE id = %s
     """
 
@@ -223,6 +279,10 @@ def atualizar_usuario(usuario_id, dados):
         dados.get("bairro"),
         dados.get("cidade"),
         dados.get("estado"),
+        consentimento_lgpd,
+        consentimento_lgpd,
+        evento_id,
+        intencao_evento,
         usuario_id
     )
 
@@ -264,6 +324,41 @@ def atualizar_foto_usuario(usuario_id, imagem_base64):
 
     conn.commit()
 
+    cursor.close()
+    conn.close()
+
+    return True
+
+def atualizar_meus_dados(usuario_id, dados):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET nome = %s,
+            email = %s,
+            cep = %s,
+            rua = %s,
+            numero = %s,
+            bairro = %s,
+            cidade = %s,
+            estado = %s,
+            intencao_evento = %s       
+            WHERE id = %s
+    """, (
+        dados.get("nome"),
+        dados.get("email"),
+        dados.get("cep"),
+        dados.get("rua"),
+        dados.get("numero"),
+        dados.get("bairro"),
+        dados.get("cidade"),
+        dados.get("estado"),
+        int(dados.get("intencao_evento", 0)),
+        usuario_id
+    ))
+
+    conn.commit()
     cursor.close()
     conn.close()
 

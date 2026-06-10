@@ -34,7 +34,7 @@
 
 <div class="card-box">
 
-    <h2 class="text-success">✅ Presença Confirmada!</h2>
+    <h2 class="text-success"> Presença Confirmada!</h2>
 
     <p class="mt-3">
         Sua presença no evento foi registrada com sucesso.
@@ -48,6 +48,18 @@
     <form method="POST" action="/excluir" onsubmit="return confirmarExclusao()">
         <button class="btn btn-danger">Excluir meus dados</button>
     </form>
+
+    <div class="acoes-confirmacao" style="padding-top: 20px;">
+
+        <a href="{{ url_for('usuario.editar_meus_dados') }}"
+        class="btn btn-primary">
+            Alterar Meus Dados
+        </a>
+     </div>   
+
+
+
+</div>
 
 </div>
 
