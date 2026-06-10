@@ -15,49 +15,56 @@ from models.usuario_model import (
 )
 
 def cadastrar_usuario(dados, imagem):
-    if not imagem:
+    try:
+        if not imagem:
+            return {
+                "sucesso": False,
+                "mensagem": "Capture a imagem antes de finalizar!"
+            }
+
+        email = dados.get("email")
+
+        if not email:
+            return {
+                "sucesso": False,
+                "mensagem": "Email obrigatório"
+            }
+
+        senha = dados.get("senha")
+
+        if not senha:
+            return {
+                "sucesso": False,
+                "mensagem": "Senha obrigatória"
+            }
+
+        hash_senha = bcrypt.hashpw(
+            senha.encode("utf-8"),
+            bcrypt.gensalt()
+        )
+
+        dados["senha"] = hash_senha.decode("utf-8")
+        dados["imagem"] = imagem
+
+        resultado = salvar_usuario(dados)
+
+        if not resultado["sucesso"]:
+            return {
+                "sucesso": False,
+                "mensagem": resultado["mensagem"]
+            }
+
         return {
-            "sucesso": False,
-            "mensagem": "Capture a imagem antes de finalizar!"
+            "sucesso": True,
+            "usuario_id": resultado["usuario_id"],
+            "mensagem": "Usuário cadastrado com sucesso."
         }
 
-    email = dados.get("email")
-
-    if not email:
+    except Exception as e:
         return {
             "sucesso": False,
-            "mensagem": "Email obrigatório"
+            "mensagem": f"Erro ao cadastrar usuário: {str(e)}"
         }
-
-    senha = dados.get("senha")
-
-    if not senha:
-        return {
-            "sucesso": False,
-            "mensagem": "Senha obrigatória"
-        }
-
-    hash_senha = bcrypt.hashpw(
-        senha.encode("utf-8"),
-        bcrypt.gensalt()
-    )
-
-    dados["senha"] = hash_senha.decode("utf-8")
-    dados["imagem"] = imagem
-
-    usuario_id = salvar_usuario(dados)
-
-    if not usuario_id:
-        return {
-            "sucesso": False,
-            "mensagem": "CPF ou Email já cadastrado!"
-        }
-
-    return {
-        "sucesso": True,
-        "usuario_id": usuario_id
-    }
-
 
 def remover_usuario(usuario_id):
     return excluir_usuario(usuario_id)

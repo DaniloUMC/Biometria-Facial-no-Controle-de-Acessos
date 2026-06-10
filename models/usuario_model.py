@@ -30,29 +30,40 @@ def salvar_imagem_criptografada(caminho_foto, imagem_base64):
 
 
 def salvar_usuario(dados):
+    conn = None
+    cursor = None
+
     try:
-        
         conn = conectar()
         cursor = conn.cursor()
 
         cpf = dados.get("cpf")
         email = dados.get("email")
-        if dados["consentimento_lgpd"] != "1":
-            return render_template(
-                "cadastro.html",
-                erro="É necessário aceitar o termo de consentimento LGPD para continuar.",
-                evento_id=dados["evento_id"]
+
+        consentimento_lgpd = str(
+            dados.get("consentimento_lgpd", "0")
         )
 
+        evento_id = dados.get("evento_id", 1)
+
+        if consentimento_lgpd != "1":
+            raise ValueError(
+                "Consentimento LGPD não foi aceito ou não chegou na sessão."
+            )
+
         cursor.execute(
-            "SELECT id FROM usuarios WHERE cpf = %s OR email = %s",
+            """
+            SELECT id
+            FROM usuarios
+            WHERE cpf = %s OR email = %s
+            """,
             (cpf, email)
         )
 
         if cursor.fetchone():
-            cursor.close()
-            conn.close()
-            return False
+            raise ValueError(
+                "CPF ou Email já cadastrado."
+            )
 
         imagem = dados.get("imagem")
         caminho_foto = None
@@ -62,9 +73,30 @@ def salvar_usuario(dados):
             salvar_imagem_criptografada(caminho_foto, imagem)
 
         query = """
-        INSERT INTO usuarios 
-        (nome, cpf, cep, rua, numero, bairro, cidade, estado, ano_nascimento, foto, senha, email, consentimento_lgpd, data_consentimento, evento_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)
+        INSERT INTO usuarios
+        (
+            nome,
+            cpf,
+            cep,
+            rua,
+            numero,
+            bairro,
+            cidade,
+            estado,
+            ano_nascimento,
+            foto,
+            senha,
+            email,
+            consentimento_lgpd,
+            data_consentimento,
+            evento_id,
+            intencao_evento
+        )
+        VALUES
+        (
+            %s, %s, %s, %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, NOW(), %s, %s
+        )
         """
 
         valores = (
@@ -80,27 +112,33 @@ def salvar_usuario(dados):
             caminho_foto,
             dados.get("senha"),
             email,
-            dados.get("consentimento_lgpd", 0),
-            dados.get("evento_id", 1)
+            int(consentimento_lgpd),
+            evento_id,
+            1
         )
 
         cursor.execute(query, valores)
         conn.commit()
 
-        usuario_id = cursor.lastrowid
-
-        cursor.close()
-        conn.close()
-
-        return usuario_id
-
-    except mysql.connector.IntegrityError:
-        return False
+        return {
+            "sucesso": True,
+            "usuario_id": cursor.lastrowid
+        }
 
     except Exception as e:
-        print("Erro ao salvar usuário:", e)
-        return False
+        print("ERRO REAL AO SALVAR USUÁRIO:", e)
 
+        return {
+            "sucesso": False,
+            "mensagem": str(e)
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
 
 def buscar_usuario(login):
     try:

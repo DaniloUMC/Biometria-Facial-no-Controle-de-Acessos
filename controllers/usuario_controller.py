@@ -141,10 +141,10 @@ def salvar():
 
     resultado = cadastrar_usuario(dados, imagem)
 
-    session.pop("dados_usuario", None)
-
     if not resultado["sucesso"]:
         return resultado["mensagem"]
+
+    session.pop("dados_usuario", None)
 
     session["usuario_id"] = resultado["usuario_id"]
     session["usuario_nome"] = dados.get("nome")
