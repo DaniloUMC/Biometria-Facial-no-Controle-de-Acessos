@@ -14,7 +14,10 @@ def test_cadastro_sem_email():
         "senha": "12345678"
     }
 
-    resultado = cadastrar_usuario(dados, "data:image/jpeg;base64,abc")
+    resultado = cadastrar_usuario(
+        dados,
+        "data:image/jpeg;base64,abc"
+    )
 
     assert resultado["sucesso"] is False
     assert resultado["mensagem"] == "Email obrigatório"
@@ -25,7 +28,10 @@ def test_cadastro_sem_senha():
         "email": "teste@teste.com"
     }
 
-    resultado = cadastrar_usuario(dados, "data:image/jpeg;base64,abc")
+    resultado = cadastrar_usuario(
+        dados,
+        "data:image/jpeg;base64,abc"
+    )
 
     assert resultado["sucesso"] is False
     assert resultado["mensagem"] == "Senha obrigatória"
@@ -33,29 +39,43 @@ def test_cadastro_sem_senha():
 
 @patch("services.usuario_service.salvar_usuario")
 def test_cadastro_cpf_email_duplicado(mock_salvar):
-    mock_salvar.return_value = False
+
+    mock_salvar.return_value = {
+        "sucesso": False,
+        "mensagem": "CPF ou Email já cadastrado."
+    }
 
     dados = {
         "email": "teste@teste.com",
         "senha": "12345678"
     }
 
-    resultado = cadastrar_usuario(dados, "data:image/jpeg;base64,abc")
+    resultado = cadastrar_usuario(
+        dados,
+        "data:image/jpeg;base64,abc"
+    )
 
     assert resultado["sucesso"] is False
-    assert resultado["mensagem"] == "CPF ou Email já cadastrado!"
+    assert resultado["mensagem"] == "CPF ou Email já cadastrado."
 
 
 @patch("services.usuario_service.salvar_usuario")
 def test_cadastro_sucesso(mock_salvar):
-    mock_salvar.return_value = 10
+
+    mock_salvar.return_value = {
+        "sucesso": True,
+        "usuario_id": 10
+    }
 
     dados = {
         "email": "teste@teste.com",
         "senha": "12345678"
     }
 
-    resultado = cadastrar_usuario(dados, "data:image/jpeg;base64,abc")
+    resultado = cadastrar_usuario(
+        dados,
+        "data:image/jpeg;base64,abc"
+    )
 
     assert resultado["sucesso"] is True
     assert resultado["usuario_id"] == 10
